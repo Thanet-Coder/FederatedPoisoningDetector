@@ -84,14 +84,14 @@ namespace FederatedPoisoningDetector
                     ModelUpdate update = uav.GenerateUpdate(round);
 
                     // UAV 3 is compromised.
+
                     if (uav.Id == 3)
                     {
-                        update = SignFlippingAttack.Apply(
+                        update = GaussianNoiseAttack.Apply(
                             update,
-                            server.GlobalWeight,
-                            server.GlobalBias,
-                            strength: 5.0);
+                            noiseStrength: 2.0);
                     }
+
 
                     updates.Add(update);
 
