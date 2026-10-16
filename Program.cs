@@ -85,12 +85,16 @@ namespace FederatedPoisoningDetector
 
                     // UAV 3 is compromised.
 
+
                     if (uav.Id == 3)
                     {
-                        update = GaussianNoiseAttack.Apply(
+                        update = ModelScalingAttack.Apply(
                             update,
-                            noiseStrength: 2.0);
+                            server.GlobalWeight,
+                            server.GlobalBias,
+                            strength: 5.0);
                     }
+
 
 
                     updates.Add(update);
