@@ -22,7 +22,15 @@ namespace FederatedPoisoningDetector.Simulation
 
             Weight = 0.0;
             Bias = 0.0;
+        }// end of constructor
+
+
+        public void SetModel(double weight, double bias)
+        {
+            Weight = weight;
+            Bias = bias;
         }
+
 
         private static double Sigmoid(double x)
         {
@@ -56,7 +64,7 @@ namespace FederatedPoisoningDetector.Simulation
                 Bias -= learningRate *
                     biasGradient / SampleCount;
             }
-        }
+        }// end of Train method
 
         public ModelUpdate GenerateUpdate(int round)
         {
@@ -69,6 +77,7 @@ namespace FederatedPoisoningDetector.Simulation
                 SampleCount = SampleCount,
                 IsMalicious = false
             };
-        }
+        }// end of GenerateUpdate method
+
     }// end of class Uav
 }// end of namespace FederatedPoisoningDetector.Simulation

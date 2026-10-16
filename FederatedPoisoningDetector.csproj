@@ -9,7 +9,6 @@
 
   <ItemGroup>
     <Folder Include="Attacks\" />
-    <Folder Include="Federation\" />
   </ItemGroup>
 
 </Project>
