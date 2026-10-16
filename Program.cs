@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using FederatedPoisoningDetector.Models;
 using FederatedPoisoningDetector.Simulation;
 using FederatedPoisoningDetector.Federation;
+using FederatedPoisoningDetector.Attacks;
 
 namespace FederatedPoisoningDetector
 {
@@ -78,8 +79,22 @@ namespace FederatedPoisoningDetector
                     // Perform local training.
                     uav.Train(localEpochs, learningRate);
 
+
                     // Collect the updated parameters.
-                    updates.Add(uav.GenerateUpdate(round));
+                    ModelUpdate update = uav.GenerateUpdate(round);
+
+                    // UAV 3 is compromised.
+                    if (uav.Id == 3)
+                    {
+                        update = SignFlippingAttack.Apply(
+                            update,
+                            server.GlobalWeight,
+                            server.GlobalBias,
+                            strength: 5.0);
+                    }
+
+                    updates.Add(update);
+
                 }
 
                 // Aggregate all local models.
