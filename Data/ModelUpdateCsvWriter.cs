@@ -9,11 +9,13 @@ namespace FederatedPoisoningDetector.Data
 {
     public static class ModelUpdateCsvWriter
     {
+
         public static void Write(
             string filePath,
             List<ModelUpdate> updates,
             double globalWeight,
-            double globalBias)
+            double globalBias,
+            int simulationId = 1)
         {
             bool fileExists = File.Exists(filePath);
 
@@ -23,7 +25,7 @@ namespace FederatedPoisoningDetector.Data
             if (!fileExists || new FileInfo(filePath).Length == 0)
             {
                 writer.WriteLine(
-                    "UavId,Round,WeightDelta,BiasDelta," +
+                    "SimulationId,UavId,Round,WeightDelta,BiasDelta," +
                     "UpdateMagnitude,SampleCount,IsMalicious");
             }
 
@@ -40,6 +42,7 @@ namespace FederatedPoisoningDetector.Data
                     biasDelta * biasDelta);
 
                 writer.WriteLine(string.Join(",",
+                    simulationId,
                     update.UavId,
                     update.Round,
                     weightDelta.ToString("R", CultureInfo.InvariantCulture),

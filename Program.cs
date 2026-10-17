@@ -4,8 +4,7 @@ using System.Collections.Generic;
 using FederatedPoisoningDetector.Models;
 using FederatedPoisoningDetector.Simulation;
 using FederatedPoisoningDetector.Federation;
-using FederatedPoisoningDetector.Attacks;
-using FederatedPoisoningDetector.Data;
+
 
 namespace FederatedPoisoningDetector
 {
@@ -16,11 +15,21 @@ namespace FederatedPoisoningDetector
         private const int LocalEpochs = 100;
         private const double LearningRate = 0.1;
 
+
         static void Main(string[] args)
         {
             DisplayWelcomeMessage();
 
             int experimentChoice = SelectExperiment();
+
+            if (experimentChoice == 5)
+            {
+                DatasetGenerator generator =
+                    new DatasetGenerator();
+
+                generator.Generate();
+                return;
+            }
 
             List<Uav> uavs = CreateFiveUavs();
 
@@ -32,7 +41,6 @@ namespace FederatedPoisoningDetector
                 experimentChoice);
 
             EvaluateGlobalModel(server);
-
         }// end of Main method
 
         // Display the application heading.
@@ -53,14 +61,15 @@ namespace FederatedPoisoningDetector
             Console.WriteLine("2. Sign-Flipping Attack");
             Console.WriteLine("3. Gaussian-Noise Attack");
             Console.WriteLine("4. Model-Scaling Attack");
+            Console.WriteLine("5. Generate Machine Learning Dataset");
             Console.WriteLine();
 
             while (true)
             {
-                Console.Write("Enter choice (1-4): ");
+                Console.Write("Enter choice (1-5): ");
 
                 if (int.TryParse(Console.ReadLine(), out int choice)
-                    && choice >= 1 && choice <= 4)
+                    && choice >= 1 && choice <= 5)
                 {
                     Console.WriteLine();
                     return choice;
@@ -129,126 +138,11 @@ namespace FederatedPoisoningDetector
             FederatedServer server,
             int experimentChoice)
         {
-            for (int round = 1; round <= TrainingRounds; round++)
-            {
-                List<ModelUpdate> updates =
-                    CollectModelUpdates(
-                        uavs,
-                        server,
-                        round,
-                        experimentChoice);
+            FederatedSimulationRunner runner =
+                new FederatedSimulationRunner();
 
-
-
-                string datasetDirectory = "datasets";
-
-                System.IO.Directory.CreateDirectory(datasetDirectory);
-
-                string csvPath = System.IO.Path.Combine(
-                    datasetDirectory,
-                    "updates.csv");
-
-                ModelUpdateCsvWriter.Write(
-                    csvPath,
-                    updates,
-                    server.GlobalWeight,
-                    server.GlobalBias);
-
-
-                server.Aggregate(updates);
-
-                DisplayRoundResults(round, server);
-            }
-
-            Console.WriteLine();
-            Console.WriteLine("Federated training completed.");
-        }// end of RunFederatedTraining method
-
-        // Collect local model updates from all UAVs.
-        private static List<ModelUpdate> CollectModelUpdates(
-            List<Uav> uavs,
-            FederatedServer server,
-            int round,
-            int experimentChoice)
-        {
-            var updates = new List<ModelUpdate>();
-
-            foreach (Uav uav in uavs)
-            {
-                // Synchronise with the current global model.
-                uav.SetModel(
-                    server.GlobalWeight,
-                    server.GlobalBias);
-
-                // Perform local training.
-                uav.Train(LocalEpochs, LearningRate);
-
-                // Generate the local model update.
-                ModelUpdate update = uav.GenerateUpdate(round);
-
-                // Apply the selected attack where appropriate.
-                update = ApplySelectedAttack(
-                    uav,
-                    update,
-                    server,
-                    experimentChoice);
-
-                updates.Add(update);
-            }
-
-            return updates;
-        }// end of CollectModelUpdates method
-
-        // Apply a poisoning attack to compromised UAV 3.
-        private static ModelUpdate ApplySelectedAttack(
-            Uav uav,
-            ModelUpdate update,
-            FederatedServer server,
-            int experimentChoice)
-        {
-            // Only UAV 3 is compromised.
-            if (uav.Id != 3)
-            {
-                return update;
-            }
-
-            switch (experimentChoice)
-            {
-                case 2:
-                    return SignFlippingAttack.Apply(
-                        update,
-                        server.GlobalWeight,
-                        server.GlobalBias,
-                        strength: 5.0);
-
-                case 3:
-                    return GaussianNoiseAttack.Apply(
-                        update,
-                        noiseStrength: 2.0);
-
-                case 4:
-                    return ModelScalingAttack.Apply(
-                        update,
-                        server.GlobalWeight,
-                        server.GlobalBias,
-                        strength: 5.0);
-
-                default:
-                    // Clean FedAvg: no attack.
-                    return update;
-            }
-        }// end of ApplySelectedAttack method
-
-        // Display the global model after each round.
-        private static void DisplayRoundResults(
-            int round,
-            FederatedServer server)
-        {
-            Console.WriteLine(
-                $"Round {round,2}: " +
-                $"Weight = {server.GlobalWeight:F4}, " +
-                $"Bias = {server.GlobalBias:F4}");
-        }
+            runner.Run(uavs, server, experimentChoice);
+        } // end of RunFederatedTraining method
 
         // Evaluate the final global model.
         private static void EvaluateGlobalModel(

@@ -375,3 +375,6 @@ __pycache__/
 # Python virtual environments
 .venv/
 venv/
+
+# Trained machine learning models
+*.joblib

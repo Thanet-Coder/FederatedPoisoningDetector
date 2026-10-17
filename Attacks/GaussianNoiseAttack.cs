@@ -5,14 +5,13 @@ namespace FederatedPoisoningDetector.Attacks
 {
     public static class GaussianNoiseAttack
     {
-        private static readonly Random RandomGenerator =
-            new Random(42);
+        private static Random random = new Random(42);
 
         private static double NextGaussian()
         {
             // Box-Muller transformation.
-            double u1 = 1.0 - RandomGenerator.NextDouble();
-            double u2 = 1.0 - RandomGenerator.NextDouble();
+            double u1 = 1.0 - random.NextDouble();
+            double u2 = 1.0 - random.NextDouble();
 
             return Math.Sqrt(-2.0 * Math.Log(u1)) *
                    Math.Cos(2.0 * Math.PI * u2);
@@ -44,6 +43,13 @@ namespace FederatedPoisoningDetector.Attacks
                 IsMalicious = true
             };
         }// end of Apply method
+
+
+        public static void SetSeed(int seed)
+        {
+            random = new Random(seed);
+        }
+
 
     }// end of class GaussianNoiseAttack
 
