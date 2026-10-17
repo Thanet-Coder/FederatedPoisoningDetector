@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using FederatedPoisoningDetector.Models;
 using FederatedPoisoningDetector.Simulation;
 using FederatedPoisoningDetector.Federation;
+using FederatedPoisoningDetector.Integration;
 
 
 namespace FederatedPoisoningDetector
@@ -28,6 +29,12 @@ namespace FederatedPoisoningDetector
                     new DatasetGenerator();
 
                 generator.Generate();
+                return;
+            }
+
+            if (experimentChoice == 6)
+            {
+                RunDetectionExperiment();
                 return;
             }
 
@@ -62,14 +69,15 @@ namespace FederatedPoisoningDetector
             Console.WriteLine("3. Gaussian-Noise Attack");
             Console.WriteLine("4. Model-Scaling Attack");
             Console.WriteLine("5. Generate Machine Learning Dataset");
+            Console.WriteLine("6. Run Python Poisoning Detection");
             Console.WriteLine();
 
             while (true)
             {
-                Console.Write("Enter choice (1-5): ");
+                Console.Write("Enter choice (1-6): ");
 
                 if (int.TryParse(Console.ReadLine(), out int choice)
-                    && choice >= 1 && choice <= 5)
+                    && choice >= 1 && choice <= 6)
                 {
                     Console.WriteLine();
                     return choice;
@@ -78,6 +86,115 @@ namespace FederatedPoisoningDetector
                 Console.WriteLine("Invalid selection. Try again.");
             }
         }// end of SelectExperiment method
+
+
+        private static int SelectDetectionScenario()
+        {
+            Console.WriteLine();
+            Console.WriteLine("Select detection scenario:");
+            Console.WriteLine();
+            Console.WriteLine("1. Clean FedAvg");
+            Console.WriteLine("2. Sign-Flipping Attack");
+            Console.WriteLine("3. Gaussian-Noise Attack");
+            Console.WriteLine("4. Model-Scaling Attack");
+            Console.WriteLine();
+
+            while (true)
+            {
+                Console.Write("Enter choice (1-4): ");
+
+                if (int.TryParse(Console.ReadLine(), out int choice)
+                    && choice >= 1 && choice <= 4)
+                {
+                    Console.WriteLine();
+                    return choice;
+                }
+
+                Console.WriteLine("Invalid selection. Try again.");
+            }
+        }// end of SelectDetectionScenario method
+
+
+
+
+        private static void RunDetectionExperiment()
+        {
+            int detectionScenario = SelectDetectionScenario();
+
+            // Assign a unique filename to each detection scenario.
+            string scenarioName = detectionScenario switch
+            {
+                1 => "clean",
+                2 => "sign_flipping",
+                3 => "gaussian_noise",
+                4 => "model_scaling",
+                _ => throw new InvalidOperationException("Invalid scenario.")
+            };
+
+            string updatesPath = $"datasets/{scenarioName}_updates.csv";
+            string predictionsPath = $"datasets/{scenarioName}_predictions.csv";
+
+            // Remove previous results for the selected scenario only.
+            if (System.IO.File.Exists(updatesPath))
+            {
+                System.IO.File.Delete(updatesPath);
+            }
+
+            if (System.IO.File.Exists(predictionsPath))
+            {
+                System.IO.File.Delete(predictionsPath);
+            }
+
+            // Create the UAV swarm and federated server.
+            List<Uav> uavs = CreateFiveUavs();
+
+            FederatedServer server = CreateFederatedServer();
+
+            FederatedSimulationRunner runner =
+                new FederatedSimulationRunner();
+
+            Console.WriteLine("Generating fresh model updates...");
+            Console.WriteLine();
+
+            // Run the selected federated learning experiment.
+            runner.Run(
+                uavs,
+                server,
+                experimentChoice: detectionScenario,
+                displayResults: true,
+                csvPath: updatesPath,
+                simulationId: 201,
+                compromisedUavId: 3,
+                attackStrength: 5.0);
+
+            Console.WriteLine();
+            Console.WriteLine($"Model updates saved to: {updatesPath}");
+
+            // Run the Python machine learning classifier.
+            PythonPredictionRunner pythonRunner =
+                new PythonPredictionRunner();
+
+            bool success = pythonRunner.Run(
+                updatesPath,
+                predictionsPath);
+
+            if (success)
+            {
+                Console.WriteLine("Python detection completed successfully.");
+
+                PredictionResultsReader resultsReader =
+                    new PredictionResultsReader();
+
+                resultsReader.DisplaySuspiciousUpdates(predictionsPath);
+            }
+            else
+            {
+                Console.WriteLine("Python detection failed.");
+            }
+
+        }// end of RunDetectionExperiment method
+
+
 
         // Create five UAVs with different local datasets.
         private static List<Uav> CreateFiveUavs()
