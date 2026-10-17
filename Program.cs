@@ -139,11 +139,21 @@ namespace FederatedPoisoningDetector
                         experimentChoice);
 
 
+
+                string datasetDirectory = "datasets";
+
+                System.IO.Directory.CreateDirectory(datasetDirectory);
+
+                string csvPath = System.IO.Path.Combine(
+                    datasetDirectory,
+                    "updates.csv");
+
                 ModelUpdateCsvWriter.Write(
-                    "updates.csv",
+                    csvPath,
                     updates,
                     server.GlobalWeight,
                     server.GlobalBias);
+
 
                 server.Aggregate(updates);
 

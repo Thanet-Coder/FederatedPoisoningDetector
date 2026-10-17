@@ -361,3 +361,17 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Generated machine learning datasets
+datasets/
+
+# Legacy CSV output in the project root
+updates.csv
+
+# Python generated files
+__pycache__/
+*.pyc
+
+# Python virtual environments
+.venv/
+venv/
